@@ -3,6 +3,9 @@ import glob
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import imagehash
+from PIL import Image, ImageFilter
+import pickle
 
 # =============================================================================
 # Functions in script
@@ -55,44 +58,94 @@ scale = 1
 w = int(4000 * scale)
 h = int(1824 * scale)
 
-for file in flist:
-    # Load the picture
-    frame = cv2.imread(file)
-    
-    # Convert to grayscale
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    
-    
-    # Convert to absolute grayscale
-    _,thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
-    
-    imS = cv2.resize(thresh, (w, h))
-    plt.imshow(imS)
-    plt.show()
-    
-    contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+# Load the picture
+frame = cv2.imread('test_images/warden_new.jpg')
 
-    sorted_contours = sorted([ (cv2.contourArea(i), i) for i in contours ], key=lambda a:a[0], reverse=True)
+# Convert to grayscale
+gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+edges = cv2.Canny(frame,100,200)
+
+
+# Convert to absolute grayscale
+_,thresh = cv2.threshold(gray, 130, 255, cv2.THRESH_BINARY)
+
+imS = cv2.resize(thresh, (w, h))
+plt.imshow(imS)
+plt.show()
+
+contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+sorted_contours = sorted([ (cv2.contourArea(i), i) for i in contours ], key=lambda a:a[0], reverse=True)
+
+# for _, contour in sorted_contours:
+#     cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
     
-    # for _, contour in sorted_contours:
-    #     cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
+
+_, card_contour = sorted_contours[1]
+#cv2.drawContours(frame, [card_contour], -1, (0, 255, 0), 2)
+
+rect = cv2.minAreaRect(card_contour)
+points = cv2.boxPoints(rect)
+points = np.int0(points)
+
+for point in points:
+    cv2.circle(frame, tuple(point), 10, (0,255,0), -1)
+
+imS = cv2.resize(frame, (w, h))
+plt.imshow(imS)
+plt.show()
+
+warped = warp_image(card_contour)
+plt.imshow(warped)
+plt.show()
+
+cv2.imwrite('warden.png', warped)
+
+hash_ = imagehash.average_hash(Image.fromarray(warped))
+
+
+# for file in flist:
+#     # Load the picture
+#     frame = cv2.imread(file)
+    
+#     # Convert to grayscale
+#     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+    
+#     # Convert to absolute grayscale
+#     _,thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
+    
+#     imS = cv2.resize(thresh, (w, h))
+#     plt.imshow(imS)
+#     plt.show()
+    
+#     contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+#     sorted_contours = sorted([ (cv2.contourArea(i), i) for i in contours ], key=lambda a:a[0], reverse=True)
+    
+#     # for _, contour in sorted_contours:
+#     #     cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
         
     
-    _, card_contour = sorted_contours[1]
-    #cv2.drawContours(frame, [card_contour], -1, (0, 255, 0), 2)
+#     _, card_contour = sorted_contours[1]
+#     #cv2.drawContours(frame, [card_contour], -1, (0, 255, 0), 2)
     
-    rect = cv2.minAreaRect(card_contour)
-    points = cv2.boxPoints(rect)
-    points = np.int0(points)
+#     rect = cv2.minAreaRect(card_contour)
+#     points = cv2.boxPoints(rect)
+#     points = np.int0(points)
     
-    for point in points:
-        cv2.circle(frame, tuple(point), 10, (0,255,0), -1)
+#     for point in points:
+#         cv2.circle(frame, tuple(point), 10, (0,255,0), -1)
     
-    imS = cv2.resize(frame, (w, h))
-    plt.imshow(imS)
-    plt.show()
+#     imS = cv2.resize(frame, (w, h))
+#     plt.imshow(imS)
+#     plt.show()
     
-    warped = warp_image(card_contour)
-    plt.imshow(warped)
-    plt.show()
-    break
+#     warped = warp_image(card_contour)
+#     plt.imshow(warped)
+#     plt.show()
+    
+#     cv2.imwrite('test.png', warped)
+    
+#     hash_ = imagehash.average_hash(Image.fromarray(warped))
+#     break
